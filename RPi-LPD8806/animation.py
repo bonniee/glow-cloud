@@ -160,6 +160,30 @@ class ColorChase(BaseAnimation):
         if self._start + self._step > self._end:
             self._step = 0
 
+class Rain(BaseAnimation):
+    def __init__(self, led, color, center, length, start=0, end=0):
+        super(Rain, self).__init__(led, start, end)
+        self._color= color
+        self._center = 26
+        self._length = 3
+        print "center", self._center, "length", self._length
+
+    def step(self, amt = 1):
+        #print self._step
+        if (self._step == 0):
+            self._led.set(self._center, self._color)
+            self._led.setOff(self._center + self._length)
+            self._led.setOff(self._center - self._length)
+        else:
+            self._led.setOff(self._center + self._step - 1)
+            self._led.setOff(self._center - self._step - 1)
+            self._led.set(self._center + self._step, self._color)
+            self._led.set(self._center - self._step, self._color)
+        self._step += 1
+        if self._step > self._length:
+            self._step = 0
+            self._led.all_off()
+
 class PartyMode(BaseAnimation):
     """Stobe Light Effect."""
 
