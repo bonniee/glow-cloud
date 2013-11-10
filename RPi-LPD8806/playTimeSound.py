@@ -1,9 +1,11 @@
 
 # def getNumberSound(i)
 import pygame
+from datetime import datetime
 
 pygame.init()
 pygame.mixer.init()
+
 
 def playNumber(num):
   if (num < 0):
@@ -18,7 +20,10 @@ def playNumber(num):
     big.play()
     little.play()
     
-def playTimeSound(hour, minute):
+def playTimeSound():
+  dt = datetime.now()
+  hour = dt.hour
+  minute = dt.minute
   itis = pygame.mixer.Sound("sounds/itis.wav")
   itis.play()
   getNumberSound(hour).play()
