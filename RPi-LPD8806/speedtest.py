@@ -5,7 +5,7 @@ import time
 from LPD8806 import *
 
 num = 36*5*2;
-led = LEDStrip(num, True)
+led = LEDStrip(num, False)
 led.setChannelOrder(ChannelOrder.BRG)
 
 print '\nUsing file.open'
@@ -35,7 +35,7 @@ print '%0.2f fps' % (1000.0/ms)
 
 led.all_off()
 
-led = LEDStrip(num, True)
+led = LEDStrip(num, False)
 led.setChannelOrder(ChannelOrder.BRG)
 
 print '\nUsing py-spidev'
