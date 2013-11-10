@@ -3,7 +3,12 @@ from animation import *
 import time
 import pywapi
 import string
-import feedparser
+import feedparser, pygame
+import pygame
+
+pygame.init()
+pygame.mixer.init()
+
 
 
 DEBUG = True
@@ -23,9 +28,59 @@ windy = [23, 24]
 cloudy = [27, 28, 29, 30, 36, 44]
 noEffect = [25, 31, 32, 33, 34, 3200]
 
+ANIMATION_LENGTH = 300
+
+def getNumberSound(i):
+  fname = "sounds/" + str(i) + ".wav"
+  return pygame.mixer.Sound(fname)
+
+def playWeatherSound(d, cond):
+
+  itIs = pygame.mixer.Sound('sounds/itis.wav')
+  degrees = pygame.mixer.Sounds('sounds/degrees.wav')
+
+  itIs.play()
+  playNumber(d)
+  degrees.play()
+
+  if cond in rain:
+    andRaining = pygame.mixer.Sound('sounds/andraining.wav')    
+    andRaining.play()
+    
+  elif cond in thunderstorm:
+    thunderstorms = pygame.mixer.Sound('sounds/thunderstorms.wav')
+    thunderstorms.play()
+
+  elif cond in snow:
+    andSnowing = pygame.mixer.Sound('sounds/andsnowing.wav')
+    andSnowing.play()
+
+  elif cond in reallybad:
+    beAfraid = pgame.mixer.Sound('sounds/beafraid.wav')
+    beAfraid.play()
+
+  elif cond in badvisibility:
+    visibility = pygame.mixer.Sound('sounds/visibility.wav')
+    visibility.play()
+
+  elif cond in windy:
+    windy = pygame.mixer.Sound('sounds/windy.wav')
+    windy.play()
+
+  elif cond in cloudy:
+    cloudy = pygame.mixer.Sound('sounds/windy.wav')
+    cloudy.play()
+
+  elif cond in noEffect:
+    allIsWell = pygame.mixer.Sound('sounds/alliswell.wav')
+    allIsWell.play()
+
+  else:
+    return
+
 def lightning(led, color='ffffff'):
   twinkle = FireFlies(led, [color_hex(color)], 30)
-  twinkle.run(None, 50)
+  twinkle.run(None, 50, max_steps=ANIMATION_LENGTH)
 
 def pickGradientColor(temp):
   low = -40.0
@@ -44,6 +99,10 @@ def pickGradientColor(temp):
   code = redHex + '00' + blueHex  
   print code
   return code
+
+def mailAlert(led):
+  rbow = RainbowCycle(led)
+  rbow.run(max_steps=ANIMATION_LENGTH)
 
 def pickColor(temp):
   temp = int(float(temp))
@@ -94,9 +153,9 @@ def main():
 
 
   while(True):
-    DEBUG = True
     if (DEBUG):
-      lightning(led)
+      #lightning(led)
+      doRain(led)
       continue
     theWeather = pywapi.get_weather_from_yahoo('08544')
     condition = theWeather['condition']['code']
@@ -117,6 +176,7 @@ def main():
     if pastNewEmails < newmails:
       newmailsdiff = (newmails - pastNewEmails)
       print "You have", newmailsdiff, "new emails!"
+      mailAlert(led)
       pastNewEmails = newmails
     elif newmails < pastNewEmails:
       pastNewEmails = newmails
