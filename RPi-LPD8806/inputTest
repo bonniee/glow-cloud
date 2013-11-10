@@ -1,0 +1,10 @@
+import sys, select
+
+TIMEOUT=10
+while True:
+  i, o, e = select.select([sys.stdin], [], [],TIMEOUT)
+  if (i):
+    print sys.stdin.readline().strip() 
+  else:
+    print "nothing was entered"
+
