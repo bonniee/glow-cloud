@@ -3,7 +3,7 @@ from animation import *
 import time
 import pywapi
 import string
-import feedparser, pygame
+import feedparser, pygame, sys, select
 import pygame
 from datetime import datetime
 
@@ -13,7 +13,7 @@ pygame.mixer.init()
 
 
 
-DEBUG = True
+DEBUG = False
 
 USERNAME = "allhailglowcloud"
 PASSWORD = "hackprinceton"
@@ -32,87 +32,81 @@ noEffect = [25, 31, 32, 33, 34, 3200]
 
 ANIMATION_LENGTH = 300
 
+def playSound(name, sleepTime):
+  pygame.mixer.music.load(name)
+  pygame.mixer.music.play()
+  time.sleep(sleepTime)
 
-def playUpdate():
-  allhail = pygame.mixer.Sound("sounds/allhailquote")
-  hello = pygame.mixer.Sound("sounds/hellonightvale")
+def playUpdate(t, cond):
+  #playSound("sounds/allhailquote.wav", 33)
+  playSound("sounds/hellonightvale.wav", 2)
 
-  allhail.play()
-  hello.play()
   playTime()
-  playWeatherSound()
+  playWeatherSound(t, cond)
 
-def playNumber(num):
+def playNumber(num, sayOh=True):
+  num = int(num)
+  print "temp = ", num
   if (num < 0):
     return
-  if (num < 20):
-    s = getNumberSound(num)
-    s.play()
+  elif num < 10:
+    if (sayOh):
+      getNumberSound(0)
+    getNumberSound(num)
+    return
+  elif (num < 20 or (num % 10 == 0)):
+    getNumberSound(num)
     return
   else:
-    little = getNumberSound(num % 10)
-    big = getNumberSound(num / 10)
-    big.play()
-    little.play()
+    getNumberSound(int(num / 10) * 10)
+    getNumberSound(num % 10)
     
 def playTime():
   dt = datetime.now()
   hour = dt.hour
+  if (hour > 12):
+    hour = hour - 12
   minute = dt.minute
-  itis = pygame.mixer.Sound("sounds/itis.wav")
-  itis.play()
-  getNumberSound(hour).play()
+  playSound("sounds/thetimeis.wav", 1)
+  playNumber(hour)
   if (minute == 0):
-    oclock = pygame.mixer.sound("sounds/oclock.wav")
-    oclock.play()
+    playSound("sounds/oclock.wav", 1)
   else:
     playNumber(minute)
 
-
 def getNumberSound(i):
   fname = "sounds/" + str(i) + ".wav"
-  return pygame.mixer.Sound(fname)
+  playSound(fname, 1)
 
 def playWeatherSound(d, cond):
 
-  itIs = pygame.mixer.Sound('sounds/itis.wav')
-  degrees = pygame.mixer.Sounds('sounds/degrees.wav')
-
-  itIs.play()
+  playSound('sounds/itis.wav', 1)
   playNumber(d)
-  degrees.play()
+  playSound('sounds/degrees.wav', 1)
 
   if cond in rain:
-    andRaining = pygame.mixer.Sound('sounds/andraining.wav')    
-    andRaining.play()
+    playSound('sounds/andraining.wav', 1)    
     
   elif cond in thunderstorm:
-    thunderstorms = pygame.mixer.Sound('sounds/thunderstorms.wav')
-    thunderstorms.play()
+    playSound('sounds/thunderstorms.wav', 4)
 
   elif cond in snow:
-    andSnowing = pygame.mixer.Sound('sounds/andsnowing.wav')
-    andSnowing.play()
+    playSound('sounds/andsnowing.wav', 1)
 
   elif cond in reallybad:
-    beAfraid = pgame.mixer.Sound('sounds/beafraid.wav')
-    beAfraid.play()
+    playSound('sounds/beafraid.wav', 2)
 
   elif cond in badvisibility:
-    visibility = pygame.mixer.Sound('sounds/visibility.wav')
-    visibility.play()
+    playSound('sounds/visibility.wav', 2)
 
   elif cond in windy:
-    windy = pygame.mixer.Sound('sounds/windy.wav')
-    windy.play()
+    playSound('sounds/windy.wav', 4)
 
   elif cond in cloudy:
-    cloudy = pygame.mixer.Sound('sounds/windy.wav')
-    cloudy.play()
+    playSound('sounds/windy.wav', 4)
 
   elif cond in noEffect:
-    allIsWell = pygame.mixer.Sound('sounds/alliswell.wav')
-    allIsWell.play()
+    playSound('sounds/alliswell.wav', 2)
 
   else:
     return
@@ -139,7 +133,13 @@ def pickGradientColor(temp):
   print code
   return code
 
-def mailAlert(led):
+def mailAlert(led, num):
+  playSound('sounds/chime.wav', 1)
+  playSound("sounds/youhave.wav", 1)
+  playNumber(num, sayOh=False)
+  playSound("sounds/newmessages.wav", 2)
+
+def doRainbow(led):
   rbow = RainbowCycle(led)
   rbow.run(max_steps=ANIMATION_LENGTH)
 
@@ -182,6 +182,9 @@ def doRain(led, color='ffffff'):
   r = Rain(led, color_hex(color), 20, 3)
   r.run(None, 200)
 
+def animateStripForWeather(condition, led, color='ffffff'):
+  fillStrip(led, color)
+
 def main():
   print pickColor(40)
 
@@ -190,37 +193,50 @@ def main():
 
   pastNewEmails = 0
 
-
   while(True):
-    if (DEBUG):
+    #if (DEBUG):
       #lightning(led)
-      doRain(led)
-      continue
+      #doRain(led)
+      #continue
+
     theWeather = pywapi.get_weather_from_yahoo('08544')
     condition = theWeather['condition']['code']
     temperature = theWeather['condition']['temp']
+    faren = int(int(temperature) * 9.0/5.0 + 32)
 
-    nextColor = pickColor(temperature)
-
-    fillStrip(led, nextColor)
-
-    print 'Condition Code; ' + condition
-    print 'Temp:' + temperature
-    print 'Color:' + nextColor
+    #print 'Condition Code; ' + condition
+    #print 'Temp:' + temperature
+    #print 'Color:' + nextColor
 
     newmails = int(feedparser.parse("https://" + USERNAME + ":" + PASSWORD + "@mail.google.com/gmail/feed/atom")["feed"]["fullcount"])
     
     print "raw:", newmails
+    if newmails > 0:
+    
+      if pastNewEmails < newmails:
+        newmailsdiff = (newmails - pastNewEmails)
+        print "You have", newmailsdiff, "new emails!"
+        mailAlert(led, newmailsdiff)
+        pastNewEmails = newmails
+      elif newmails < pastNewEmails:
+        pastNewEmails = newmails
+      doRainbow(led)
 
-    if pastNewEmails < newmails:
-      newmailsdiff = (newmails - pastNewEmails)
-      print "You have", newmailsdiff, "new emails!"
-      mailAlert(led)
-      pastNewEmails = newmails
-    elif newmails < pastNewEmails:
-      pastNewEmails = newmails
+    else:
+      nextColor = pickColor(temperature)
+      animateStripForWeather(condition, led, nextColor)    
+    
 
-    time.sleep(2)
+    TIMEOUT = 15
+    i, o, e = select.select([sys.stdin], [], [], TIMEOUT)
+    if (i):
+       gotcha = sys.stdin.readline().strip()
+       if(gotcha == 'u'):
+         playUpdate(faren, condition)
+       print gotcha
+    else:
+       print "nothing was entered"
+    #time.sleep(60)
 
 
  # for i in range(-10,45):
