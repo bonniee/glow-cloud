@@ -6,6 +6,14 @@ from datetime import datetime
 pygame.init()
 pygame.mixer.init()
 
+def playUpdate():
+  allhail = pygame.mixer.Sound("sounds/allhailquote")
+  hello = pygame.mixer.Sound("sounds/hellonightvale")
+
+  allhail.play()
+  hello.play()
+  playTime()
+  playWeatherSound()
 
 def playNumber(num):
   if (num < 0):
@@ -20,7 +28,7 @@ def playNumber(num):
     big.play()
     little.play()
     
-def playTimeSound():
+def playTime():
   dt = datetime.now()
   hour = dt.hour
   minute = dt.minute
